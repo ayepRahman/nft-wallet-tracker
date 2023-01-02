@@ -1,4 +1,21 @@
-import { Box, Button, Flex, Input, Text } from "@chakra-ui/react";
+import { AddIcon, CloseIcon } from "@chakra-ui/icons";
+import {
+  Accordion,
+  AccordionButton,
+  AccordionIcon,
+  AccordionItem,
+  AccordionPanel,
+  Box,
+  Button,
+  Container,
+  Flex,
+  Grid,
+  GridItem,
+  Heading,
+  Input,
+  Text,
+} from "@chakra-ui/react";
+import NftCard from "@components/NftCard";
 import { zodResolver } from "@hookform/resolvers/zod";
 import useGetUsersNfts from "@hooks/useGetUsersNfts";
 import { ethers } from "ethers";
@@ -42,7 +59,7 @@ export default function Home() {
   } = useForm({
     resolver: zodResolver(SearchNftsSchema),
     defaultValues: {
-      addresses: [{ address: "Add wallet address here" }],
+      addresses: [{ address: "" }],
     },
   });
 
@@ -64,59 +81,106 @@ export default function Home() {
   };
 
   return (
-    <>
-      <div>Nft Wallet Tracker</div>
-
-      <form onSubmit={handleSubmit(handleOnSubmit)}>
-        {!!fields?.length &&
-          fields?.map((field, index) => {
-            return (
-              <>
-                <Flex
-                  key={field.id} // important to include key with field's id
-                  alignItems="center"
-                  gap="1rem"
-                  mb="0.5rem"
-                >
-                  <Input
-                    placeholder="address"
-                    width="full"
-                    {...register(
-                      `${SearchNftsEnum.addresses}.${index}.address`
-                    )}
-                  />
-                  <Button
-                    onClick={() =>
-                      insert(1, { address: "Add wallet address here" })
-                    }
-                  >
-                    ADD
-                  </Button>
-                  <Button onClick={() => remove(index)}>DELETE</Button>
-                </Flex>
-                {!!errors?.addresses?.[index]?.address?.message && (
-                  <Text fontSize="sm" mb="0.5rem" color="red.300">
-                    {errors?.addresses?.[index]?.address?.message}
-                  </Text>
-                )}
-              </>
-            );
-          })}
-        <Button type="submit" isLoading={isLoading} w="full">
-          Search
-        </Button>
-      </form>
+    <Container maxW="container.lg">
+      <Accordion defaultIndex={[0]} allowMultiple>
+        <AccordionItem>
+          <AccordionButton>
+            <Box as="span" flex="1" textAlign="left">
+              <Heading size="md">Search by multiple wallet address</Heading>
+            </Box>
+            <AccordionIcon />
+          </AccordionButton>
+          <AccordionPanel pb={4}>
+            {!!fields?.length ? (
+              <form onSubmit={handleSubmit(handleOnSubmit)}>
+                {fields?.map((field, index) => {
+                  return (
+                    <>
+                      <Flex
+                        key={field.id} // important to include key with field's id
+                        alignItems="center"
+                        gap="1rem"
+                        mb="0.5rem"
+                      >
+                        <Input
+                          placeholder="Add wallet address here"
+                          width="full"
+                          {...register(
+                            `${SearchNftsEnum.addresses}.${index}.address`
+                          )}
+                        />
+                        <Button onClick={() => insert(1, { address: "" })}>
+                          <AddIcon />
+                        </Button>
+                        <Button onClick={() => remove(index)}>
+                          <CloseIcon />
+                        </Button>
+                      </Flex>
+                      {!!errors?.addresses?.[index]?.address?.message && (
+                        <Text fontSize="sm" mb="0.5rem" color="red.300">
+                          {errors?.addresses?.[index]?.address?.message}
+                        </Text>
+                      )}
+                    </>
+                  );
+                })}
+                <Button type="submit" isLoading={isLoading} w="full">
+                  Search
+                </Button>
+              </form>
+            ) : (
+              <Flex w="full" justifyContent="flex-end">
+                <Button onClick={() => insert(1, { address: "" })}>Add</Button>
+              </Flex>
+            )}
+          </AccordionPanel>
+        </AccordionItem>
+      </Accordion>
 
       {/* pagination */}
 
-      {nfts?.length &&
-        nfts.map((nft) => {
-          return (
-            <Box border="1px" p="1rem" key={nft.tokenId}>
-              {JSON.stringify(nft)}
-            </Box>
-          );
-        })}
-    </>
+      <Box height="calc(100vh - 156px)" overflowY="auto">
+        {/* <InfiniteScroll
+            pageStart={0}
+            loadMore={() => fetchNextPage()}
+            hasMore={hasMore}
+            useWindow={false}
+          > */}
+        <Grid
+          p="1rem"
+          alignItems="flex-start"
+          templateColumns="repeat(auto-fill, minmax(242px, 1fr))"
+          templateRows="auto 1fr"
+          gap="1rem"
+        >
+          {isLoading ? (
+            <div>Loading</div>
+          ) : (
+            <>
+              {!!nfts?.length &&
+                nfts?.length > 0 &&
+                nfts.map((t, i) => {
+                  if (!t) return;
+                  return (
+                    <GridItem key={t?.title || i} w="100%">
+                      <NftCard
+                        nft={t}
+                        // onClick={() =>
+                        //   !selectedTokenIds.includes(t?.id || "")
+                        //     ? handleSelected(t?.id || "")
+                        //     : handleUnSelected(t?.id || "")
+                        // }
+                        // isSelected={selectedTokenIds.includes(t?.id || "")}
+                      />
+                    </GridItem>
+                  );
+                })}
+              {/* {isFetching && loader(12)} */}
+            </>
+          )}
+        </Grid>
+        {/* </InfiniteScroll> */}
+      </Box>
+    </Container>
   );
 }
